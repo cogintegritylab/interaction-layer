@@ -99,7 +99,7 @@ export default function Home() {
   };
 
   if (finalizedResult) {
-    const fullOutput = `${text}\n\n— AI-free composition · Cognitive Integrity Lab · Verify: ${finalizedResult.verifyUrl}`;
+    const fullOutput = `${text}\n\nAI-free | ${finalizedResult.verifyUrl}`;
     return (
       <main style={pageStyle}>
         <p style={previewNoticeStyle}>
