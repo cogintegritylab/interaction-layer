@@ -106,22 +106,21 @@ export default function AboutPage() {
       <h2 style={h2Style}>What this tool cannot prove</h2>
       <ul style={listStyle}>
         <li style={liStyle}>
-          <strong>Authorship.</strong> A green badge does not prove that the
-          human at the keyboard wrote the words themselves — only that the text
-          was submitted through a tool that blocked paste, copy, and drag
-          during composition. A writer could read AI-generated text on
-          another device and retype it into our tool by hand. Voice dictation
-          and accessibility tools can feed text in through paths the tool
-          cannot intercept. A determined user can disable JavaScript and
-          bypass the blocking entirely. No automated tool can verify what was
-          in someone&rsquo;s head as they typed.
+          <strong>Authorship.</strong> The receipt does not prove who composed
+          the words, only that the text passed through a tool whose paste,
+          copy, and drag protections were in effect. Some input channels —
+          voice dictation, accessibility tools — cannot be distinguished from
+          manual typing. And no tool can determine what the writer was
+          reading, thinking, or referring to as they typed. Stronger
+          enforcement of composition conditions would require a verified
+          client, which is on the protocol roadmap.
         </li>
         <li style={liStyle}>
-          <strong>That the timestamp is honest.</strong> The site operator
-          controls the server, so could in principle sign a composition today
-          and stamp it as last week. Closing this fully requires anchoring
-          each signature to an independent timestamping service (for example,
-          OpenTimestamps anchoring to the Bitcoin blockchain). This is on the
+          <strong>That the timestamp is independently anchored.</strong> The
+          current implementation uses the issuer&rsquo;s server clock; an
+          independent timestamping service (such as OpenTimestamps, which
+          anchors signatures to a public ledger) would provide times
+          verifiable without trusting any single party. This is on the
           roadmap.
         </li>
       </ul>
@@ -249,6 +248,22 @@ export default function AboutPage() {
         signing key, key ID <code style={codeStyle}>{KEY_ID}</code>:
       </p>
       <pre style={preStyle}>{PUBLIC_KEY_BASE64}</pre>
+
+      <h2 style={h2Style}>Roadmap</h2>
+      <p style={paragraphStyle}>
+        Current development focuses on closing the limits described above.
+        The protocol specification defines a framework of increasingly
+        strong assurance — independent timestamping, verified clients, and
+        third-party institutional audit — that we are actively working
+        toward. The full framework is in §14 of the{" "}
+        <a
+          href="https://github.com/cogintegritylab/interaction-layer/blob/main/SPEC.md#14-assurance-levels"
+          style={linkStyle}
+        >
+          protocol specification
+        </a>
+        .
+      </p>
 
       <h2 style={h2Style}>Attribution</h2>
       <p style={paragraphStyle}>
