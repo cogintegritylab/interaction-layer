@@ -459,9 +459,12 @@ Given a `.cogdoc` in `VALID_CERTIFIED` state:
 
 ### What is not proved
 
-- That the writer composed the text without AI assistance.
-- That the writer composed the text without external dictation,
-  retyping, or screen-reading.
+- That the writer composed the text without consulting AI, dictation,
+  or other external sources. No automated tool — not even a
+  hypothetically perfect AI detector — can verify what a writer was
+  reading or thinking during composition. The protocol takes a first
+  step in that direction by providing a cryptographic record of the
+  declared process and a tamper-evident seal on the result.
 - That the timestamps are genuinely contemporaneous and not backdated
   by the issuer (this requires an independent timestamping service such
   as OpenTimestamps; not specified in this version).
