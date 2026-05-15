@@ -51,7 +51,7 @@ export async function createSignedReceipt(
     key_id: KEY_ID,
   };
   const canonical = canonicalReceiptJSON(
-    receipt as unknown as Record<string, string>
+    receipt as unknown as Record<string, string | number>
   );
   const privateKey = await crypto.subtle.importKey(
     "pkcs8",

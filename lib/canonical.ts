@@ -13,10 +13,10 @@ export function canonicalText(input: string): string {
 }
 
 export function canonicalReceiptJSON(
-  receipt: Record<string, string>
+  receipt: Record<string, string | number>
 ): string {
   const sortedKeys = Object.keys(receipt).sort();
-  const sorted: Record<string, string> = {};
+  const sorted: Record<string, string | number> = {};
   for (const k of sortedKeys) sorted[k] = receipt[k];
   return JSON.stringify(sorted);
 }
