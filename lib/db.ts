@@ -11,9 +11,9 @@ export function getSql() {
   return cached;
 }
 
-export type CompositionRecord = {
+// What the DB stores. Note: no text/content. Only the receipt and signature.
+export type StoredRecord = {
   id: string;
-  text: string;
-  created_at: string;
+  receipt_canonical: string;
   signature: string;
 };

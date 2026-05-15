@@ -1,12 +1,24 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { randomBytes } from "node:crypto";
 import { getSql } from "@/lib/db";
-import { generateId, signRecord } from "@/lib/crypto";
+import { createSignedReceipt } from "@/lib/receipt";
 
 export const runtime = "nodejs";
 
 const MAX_TEXT_LENGTH = 100_000;
 
+function generateId(): string {
+  return randomBytes(6).toString("base64url");
+}
+
 export async function POST(request: NextRequest) {
+  if (!process.env.SIGNING_PRIVATE_KEY) {
+    return NextResponse.json(
+      { error: "Server is not configured for signing." },
+      { status: 500 }
+    );
+  }
+
   let body: unknown;
   try {
     body = await request.json();
@@ -30,14 +42,17 @@ export async function POST(request: NextRequest) {
   }
 
   const id = generateId();
-  const createdAt = new Date().toISOString();
-  const signature = signRecord({ id, text, createdAt });
+  const { canonical, signature } = await createSignedReceipt(
+    text,
+    "ai_free",
+    process.env.SIGNING_PRIVATE_KEY
+  );
 
   try {
     const sql = getSql();
     await sql`
-      INSERT INTO compositions (id, text, created_at, signature)
-      VALUES (${id}, ${text}, ${createdAt}, ${signature})
+      INSERT INTO compositions (id, receipt_canonical, signature)
+      VALUES (${id}, ${canonical}, ${signature})
     `;
   } catch (err) {
     console.error("DB insert failed:", err);

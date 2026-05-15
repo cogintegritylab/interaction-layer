@@ -102,7 +102,9 @@ export default function Home() {
     return (
       <main style={pageStyle}>
         <p style={previewNoticeStyle}>
-          Finalized. Select and copy the text below to paste elsewhere.
+          Finalized. Select and copy the text below to paste elsewhere. The
+          recipient can click the verify link to confirm the text and timestamp
+          have not been altered.
         </p>
         <div style={finalizedTextStyle}>{fullOutput}</div>
         <button onClick={handleStartOver} style={secondaryButtonStyle}>
@@ -114,11 +116,11 @@ export default function Home() {
 
   return (
     <main style={pageStyle}>
-      <h1 style={headingStyle}>AI-Free Composition</h1>
+      <h1 style={headingStyle}>Composition · ai_free mode</h1>
       <p style={mutedStyle}>
-        Type by hand. Copy, cut, and paste work normally within this box, but
-        text cannot enter from or leave to other apps. Your draft is saved
-        automatically in this browser until you click Finalize.
+        Type by hand. Copy, cut, and paste work within this box, but text cannot
+        enter from or leave to other apps. Your draft is saved in this browser
+        until you click Finalize.
       </p>
       <textarea
         ref={textareaRef}

@@ -16,8 +16,7 @@ try {
   await sql`
     CREATE TABLE IF NOT EXISTS compositions (
       id text PRIMARY KEY,
-      text text NOT NULL,
-      created_at timestamptz NOT NULL DEFAULT NOW(),
+      receipt_canonical text NOT NULL,
       signature text NOT NULL
     )
   `;
