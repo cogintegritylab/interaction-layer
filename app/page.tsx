@@ -1,0 +1,255 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import type { ClipboardEvent, DragEvent } from "react";
+
+const DRAFT_KEY = "aife_draft_v1";
+
+type FinalizedResult = { id: string; verifyUrl: string };
+
+export default function Home() {
+  const [text, setText] = useState("");
+  const [finalizedResult, setFinalizedResult] =
+    useState<FinalizedResult | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [hydrated, setHydrated] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const internalClipboard = useRef<string>("");
+
+  useEffect(() => {
+    const saved = localStorage.getItem(DRAFT_KEY);
+    if (saved) setText(saved);
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated || finalizedResult) return;
+    localStorage.setItem(DRAFT_KEY, text);
+  }, [text, hydrated, finalizedResult]);
+
+  const handleCopy = (e: ClipboardEvent<HTMLTextAreaElement>) => {
+    e.preventDefault();
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const { selectionStart, selectionEnd } = ta;
+    if (selectionStart !== selectionEnd) {
+      internalClipboard.current = ta.value.slice(selectionStart, selectionEnd);
+    }
+  };
+
+  const handleCut = (e: ClipboardEvent<HTMLTextAreaElement>) => {
+    e.preventDefault();
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const { selectionStart, selectionEnd } = ta;
+    if (selectionStart !== selectionEnd) {
+      internalClipboard.current = ta.value.slice(selectionStart, selectionEnd);
+      // execCommand is deprecated but uniquely integrates with native undo for textareas.
+      document.execCommand("insertText", false, "");
+    }
+  };
+
+  const handlePaste = (e: ClipboardEvent<HTMLTextAreaElement>) => {
+    e.preventDefault();
+    if (internalClipboard.current) {
+      document.execCommand("insertText", false, internalClipboard.current);
+    }
+  };
+
+  const blockDrag = (e: DragEvent<HTMLTextAreaElement>) => {
+    e.preventDefault();
+  };
+
+  const handleFinalize = async () => {
+    if (text.trim().length === 0 || submitting) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/finalize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      if (!response.ok) {
+        const data: { error?: string } = await response
+          .json()
+          .catch(() => ({}));
+        throw new Error(data.error || `Server returned ${response.status}`);
+      }
+      const data: FinalizedResult = await response.json();
+      setFinalizedResult(data);
+      localStorage.removeItem(DRAFT_KEY);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Something went wrong";
+      setError(message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleStartOver = () => {
+    setText("");
+    setFinalizedResult(null);
+    setError(null);
+    internalClipboard.current = "";
+    localStorage.removeItem(DRAFT_KEY);
+    setTimeout(() => textareaRef.current?.focus(), 0);
+  };
+
+  if (finalizedResult) {
+    const fullOutput = `${text}\n\n— AI-free composition · Cognitive Integrity Lab · Verify: ${finalizedResult.verifyUrl}`;
+    return (
+      <main style={pageStyle}>
+        <p style={previewNoticeStyle}>
+          Finalized. Select and copy the text below to paste elsewhere.
+        </p>
+        <div style={finalizedTextStyle}>{fullOutput}</div>
+        <button onClick={handleStartOver} style={secondaryButtonStyle}>
+          Start a new composition
+        </button>
+      </main>
+    );
+  }
+
+  return (
+    <main style={pageStyle}>
+      <h1 style={headingStyle}>AI-Free Composition</h1>
+      <p style={mutedStyle}>
+        Type by hand. Copy, cut, and paste work normally within this box, but
+        text cannot enter from or leave to other apps. Your draft is saved
+        automatically in this browser until you click Finalize.
+      </p>
+      <textarea
+        ref={textareaRef}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onCopy={handleCopy}
+        onCut={handleCut}
+        onPaste={handlePaste}
+        onDrop={blockDrag}
+        onDragOver={blockDrag}
+        onDragStart={blockDrag}
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck={true}
+        placeholder="Begin typing…"
+        style={textareaStyle}
+        disabled={submitting}
+      />
+      {error && <p style={errorStyle}>Error: {error}</p>}
+      <div style={toolbarStyle}>
+        <span style={mutedStyle}>{text.length} characters</span>
+        <button
+          onClick={handleFinalize}
+          disabled={text.trim().length === 0 || submitting}
+          style={
+            text.trim().length === 0 || submitting
+              ? { ...primaryButtonStyle, ...disabledButtonStyle }
+              : primaryButtonStyle
+          }
+        >
+          {submitting ? "Signing…" : "Finalize"}
+        </button>
+      </div>
+    </main>
+  );
+}
+
+const pageStyle: React.CSSProperties = {
+  maxWidth: 720,
+  margin: "0 auto",
+  padding: "3rem 1.5rem",
+  display: "flex",
+  flexDirection: "column",
+  gap: "1rem",
+};
+
+const headingStyle: React.CSSProperties = {
+  margin: 0,
+  fontSize: "1.5rem",
+  fontWeight: 600,
+};
+
+const mutedStyle: React.CSSProperties = {
+  margin: 0,
+  color: "#6b6b6b",
+  fontSize: "0.9rem",
+};
+
+const previewNoticeStyle: React.CSSProperties = {
+  margin: 0,
+  fontSize: "0.8rem",
+  color: "#999",
+};
+
+const errorStyle: React.CSSProperties = {
+  margin: 0,
+  padding: "0.6rem 0.8rem",
+  fontSize: "0.9rem",
+  color: "#7a1a1a",
+  background: "#fdecec",
+  border: "1px solid #f5c4c4",
+  borderRadius: 6,
+};
+
+const textareaStyle: React.CSSProperties = {
+  width: "100%",
+  minHeight: "60vh",
+  padding: "1rem",
+  fontFamily: "inherit",
+  fontSize: "1rem",
+  lineHeight: 1.6,
+  color: "#1a1a1a",
+  background: "#fff",
+  border: "1px solid #d4d4d4",
+  borderRadius: 6,
+  resize: "vertical",
+  outline: "none",
+  boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+};
+
+const toolbarStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "1rem",
+};
+
+const primaryButtonStyle: React.CSSProperties = {
+  padding: "0.6rem 1.2rem",
+  fontSize: "1rem",
+  fontFamily: "inherit",
+  color: "#fff",
+  background: "#1a1a1a",
+  border: "none",
+  borderRadius: 6,
+  cursor: "pointer",
+};
+
+const disabledButtonStyle: React.CSSProperties = {
+  opacity: 0.4,
+  cursor: "not-allowed",
+};
+
+const secondaryButtonStyle: React.CSSProperties = {
+  alignSelf: "flex-start",
+  padding: "0.5rem 1rem",
+  fontSize: "0.9rem",
+  fontFamily: "inherit",
+  color: "#1a1a1a",
+  background: "transparent",
+  border: "1px solid #d4d4d4",
+  borderRadius: 6,
+  cursor: "pointer",
+};
+
+const finalizedTextStyle: React.CSSProperties = {
+  whiteSpace: "pre-wrap",
+  wordWrap: "break-word",
+  fontFamily: "inherit",
+  fontSize: "1rem",
+  lineHeight: 1.6,
+  color: "#1a1a1a",
+};
