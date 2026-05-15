@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { ClipboardEvent, DragEvent } from "react";
 
@@ -110,6 +111,11 @@ export default function Home() {
         <button onClick={handleStartOver} style={secondaryButtonStyle}>
           Start a new composition
         </button>
+        <p style={aboutLinkStyle}>
+          <Link href="/about" style={aboutLinkAnchorStyle}>
+            About this site
+          </Link>
+        </p>
       </main>
     );
   }
@@ -118,9 +124,14 @@ export default function Home() {
     <main style={pageStyle}>
       <h1 style={headingStyle}>Composition · ai_free mode</h1>
       <p style={mutedStyle}>
-        Type by hand. Copy, cut, and paste work within this box, but text cannot
-        enter from or leave to other apps. Your draft is saved in this browser
-        until you click Finalize.
+        Copy, cut, and paste work within this box, but text cannot enter from
+        or leave to other apps. Your draft is saved in this browser until you
+        click Finalize.
+      </p>
+      <p style={aboutPromptStyle}>
+        <Link href="/about" style={aboutPromptAnchorStyle}>
+          What is this? About the protocol and the trust model →
+        </Link>
       </p>
       <textarea
         ref={textareaRef}
@@ -155,9 +166,36 @@ export default function Home() {
           {submitting ? "Signing…" : "Finalize"}
         </button>
       </div>
+      <p style={aboutLinkStyle}>
+        <Link href="/about" style={aboutLinkAnchorStyle}>
+          About this site
+        </Link>
+      </p>
     </main>
   );
 }
+
+const aboutLinkStyle: React.CSSProperties = {
+  margin: "1rem 0 0",
+  fontSize: "0.85rem",
+  color: "#6b6b6b",
+};
+
+const aboutLinkAnchorStyle: React.CSSProperties = {
+  color: "#6b6b6b",
+  textDecoration: "underline",
+};
+
+const aboutPromptStyle: React.CSSProperties = {
+  margin: "0 0 0.25rem",
+  fontSize: "0.95rem",
+};
+
+const aboutPromptAnchorStyle: React.CSSProperties = {
+  color: "#0d4a8a",
+  textDecoration: "underline",
+  fontWeight: 500,
+};
 
 const pageStyle: React.CSSProperties = {
   maxWidth: 720,

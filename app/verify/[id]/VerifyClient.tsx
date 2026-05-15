@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { hashText } from "@/lib/hash";
 import { parseReceipt, verifySignature, type Receipt } from "@/lib/receipt";
@@ -129,69 +130,73 @@ export default function VerifyClient({
       </section>
 
       <section style={detailSectionStyle}>
-        <h2 style={subheadingStyle}>What is being verified?</h2>
+        <h2 style={subheadingStyle}>How does this work?</h2>
         <div style={qaStyle}>
           <QA q="Is this AI detection?">
-            No. This page does not look at the prose and guess whether it
-            &ldquo;sounds AI-generated.&rdquo; It checks a cryptographic
-            receipt.
+            No. This page does not look at the prose at all. AI detaches
+            what is produced from the cognitive process behind it; this tool
+            keeps them connected. At the moment of finalization, the writer
+            signs a small cryptographic receipt. What gets verified here is
+            the receipt — never a guess about the prose itself.
           </QA>
-          <QA q="What does &ldquo;valid&rdquo; actually mean?">
-            Two things, mathematically: (1) the text you pasted matches, byte
-            for byte after whitespace normalization, the text that was
-            originally signed; (2) that signature was made using the private
-            key paired with the public key shown below.
+          <QA q="Does this work by surveillance?">
+            No keystroke logging. No monitoring. The original text is not
+            stored anywhere — only its mathematical fingerprint. We do not
+            know what you wrote, and we can still tell whether a single
+            character was changed. The text you just pasted into this page
+            is not sent to any server; the check happens entirely in your
+            browser.
           </QA>
-          <QA q="What is stored on the server?">
-            Only the signed receipt and signature — never the writing itself.
-            The receipt contains a one-way fingerprint (hash) of the text, not
-            the text. The text lives only in your message.
-          </QA>
-          <QA q="What happens to my pasted text?">
-            It is hashed in your browser using built-in cryptography. The hash
-            is compared with the receipt&rsquo;s hash locally. The text is not
-            sent anywhere.
-          </QA>
-          <QA q="What is NOT proven?">
-            Authorship in any deep sense. The receipt certifies that the text
-            was finalized through the declared mode (here:{" "}
-            <code>ai_free</code>) at the recorded time, and that the text has
-            not been altered since. It does not prove who typed it, or what
-            sources they consulted, or whether anyone read the text off
-            another screen.
-          </QA>
-          <QA q="How can I verify this independently?">
-            Anyone with the public key below can verify the signature using any
-            standard Ed25519 library. The verification uses the canonical
-            receipt JSON shown below as the signed payload. The source code
-            for this page is at{" "}
-            <a
-              href="https://github.com/cogintegritylab/interaction-layer"
-              target="_blank"
-              rel="noreferrer"
-              style={linkStyle}
-            >
-              github.com/cogintegritylab/interaction-layer
-            </a>
-            .
-          </QA>
+          <p style={readMoreStyle}>
+            <Link href="/about" style={readMoreLinkStyle}>
+              Learn more about how this actually works →
+            </Link>
+          </p>
         </div>
       </section>
 
       <section style={detailSectionStyle}>
-        <h2 style={subheadingStyle}>For independent verification</h2>
+        <h2 style={subheadingStyle}>How can I verify this independently?</h2>
         <p style={mutedStyle}>
           These four pieces are sufficient to verify the signature without
-          trusting this site.
+          trusting this site. Any standard Ed25519 verifier can confirm the
+          signature using just the public key, the signed payload, and the
+          signature. The source code is at{" "}
+          <a
+            href="https://github.com/cogintegritylab/interaction-layer"
+            target="_blank"
+            rel="noreferrer"
+            style={linkStyle}
+          >
+            github.com/cogintegritylab/interaction-layer
+          </a>
+          .
         </p>
         <ProofField label="Public key (Ed25519, SPKI, base64)" value={PUBLIC_KEY_BASE64} />
         <ProofField label="Signed payload (canonical JSON)" value={receiptCanonical} />
         <ProofField label="Signature (base64)" value={signature} />
         <ProofField label="This verify page" value={verifyUrl} />
       </section>
+
+      <p style={aboutLinkStyle}>
+        <Link href="/about" style={aboutLinkAnchorStyle}>
+          About this site, the protocol, and the trust model
+        </Link>
+      </p>
     </main>
   );
 }
+
+const aboutLinkStyle: React.CSSProperties = {
+  margin: 0,
+  fontSize: "0.85rem",
+  color: "#6b6b6b",
+};
+
+const aboutLinkAnchorStyle: React.CSSProperties = {
+  color: "#6b6b6b",
+  textDecoration: "underline",
+};
 
 function StatusBanner({ status }: { status: Status }) {
   if (status.kind === "idle") {
@@ -412,6 +417,17 @@ const qaAnswerStyle: React.CSSProperties = {
 };
 
 const linkStyle: React.CSSProperties = {
+  color: "#0d4a8a",
+  textDecoration: "underline",
+};
+
+const readMoreStyle: React.CSSProperties = {
+  margin: "0.5rem 0 0",
+  fontSize: "0.95rem",
+  fontWeight: 500,
+};
+
+const readMoreLinkStyle: React.CSSProperties = {
   color: "#0d4a8a",
   textDecoration: "underline",
 };
