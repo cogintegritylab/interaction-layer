@@ -15,8 +15,8 @@ The aim is not AI detection. The aim is to certify process conditions — to let
   - **2a.1** ✅ signing endpoint (`/api/checkpoint`) with session + CSRF + origin + per-session rate limit; server-side checkpoint signing using Ed25519.
   - **2a.2** ✅ "Save Draft" button writing portable `.cogdoc` files.
   - **2a.3** ✅ "Open Draft" with local verification of the checkpoint chain.
-  - **2a.4** *(current):* Continuation chain (subsequent saves chain to previous; broken or finalized files start a fresh doc_id).
-  - **2a.5:** Polish + integration with Finalize + UI for chain status.
+  - **2a.4** ✅ Continuation chain + broken-state lockout (re-certifying a tampered chain requires retyping through the paste-blocked editor).
+  - **2a.5** *(current):* Finalize integration (archival `.cogdoc` with `final_receipt` produced alongside the verify URL when a chain is active) + finalized-state handling on Open Draft.
 
 ## Protocol specification
 

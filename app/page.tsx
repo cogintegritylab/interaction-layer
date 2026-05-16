@@ -19,6 +19,7 @@ type LoadedDraft = {
   status: CogdocStatus;
   reason: string | null;
   checkpointCount: number;
+  finalized: boolean;
 };
 
 function generateDocId(): string {
@@ -61,6 +62,12 @@ function generateFilename(text: string): string {
   return slug ? `${datePrefix}-${slug}.cogdoc` : `${datePrefix}.cogdoc`;
 }
 
+// Same convention as generateFilename, but with a "-final" suffix to
+// distinguish archival copies from in-progress drafts in a Downloads folder.
+function generateFinalFilename(text: string): string {
+  return generateFilename(text).replace(/\.cogdoc$/, "-final.cogdoc");
+}
+
 // SHA-256 hex of the canonical payload bytes of the last checkpoint in a
 // chain. Used to build the next checkpoint's prev_checkpoint_hash. Returns
 // the literal "genesis" string for an empty chain.
@@ -85,6 +92,7 @@ export default function Home() {
   const [saving, setSaving] = useState(false);
   const [loadedDraft, setLoadedDraft] = useState<LoadedDraft | null>(null);
   const [modifiedSinceLoad, setModifiedSinceLoad] = useState(false);
+  const [archivedAsFile, setArchivedAsFile] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const internalClipboard = useRef<string>("");
@@ -170,6 +178,7 @@ export default function Home() {
         reason: result.reason,
         checkpointCount:
           cogdoc.checkpoints.length + (cogdoc.final_receipt ? 1 : 0),
+        finalized: cogdoc.final_receipt !== null,
       });
       setFinalizedResult(null);
     } catch (err) {
@@ -276,6 +285,7 @@ export default function Home() {
         status: "valid",
         reason: null,
         checkpointCount: loadedCheckpointsRef.current.length,
+        finalized: false,
       });
       setModifiedSinceLoad(false);
     } catch (e: unknown) {
@@ -288,9 +298,13 @@ export default function Home() {
 
   const handleFinalize = async () => {
     if (text.trim().length === 0 || submitting) return;
+    if (loadedDraft?.status === "broken") return;
     setSubmitting(true);
     setError(null);
+    setArchivedAsFile(false);
     try {
+      // Step 1: existing v1 finalize. This is what produces the shareable
+      // verify URL stored server-side, regardless of any .cogdoc workflow.
       const response = await fetch("/api/finalize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -303,6 +317,65 @@ export default function Home() {
         throw new Error(data.error || `Server returned ${response.status}`);
       }
       const data: FinalizedResult = await response.json();
+
+      // Step 2: if there is an active checkpoint chain, additionally
+      // request a v2 final receipt and download a self-contained archival
+      // .cogdoc. Best-effort: failures here are logged and do not affect
+      // the verify URL (which is what the recipient actually uses).
+      if (loadedCheckpointsRef.current.length > 0 && docIdRef.current) {
+        try {
+          const csrf = readCsrfTokenFromCookie();
+          if (csrf) {
+            const prevHash = await lastCheckpointCanonicalHash(
+              loadedCheckpointsRef.current
+            );
+            const textHashHex = await hashText(text);
+            const finalResponse = await fetch("/api/checkpoint", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-Token": csrf,
+              },
+              body: JSON.stringify({
+                doc_id: docIdRef.current,
+                mode: "ai_free",
+                text_hash: textHashHex,
+                prev_checkpoint_hash: prevHash,
+                type: "final",
+              }),
+            });
+            if (finalResponse.ok) {
+              const signedFinal: SignedCheckpoint = await finalResponse.json();
+              loadedFinalReceiptRef.current = signedFinal;
+
+              const cogdoc = {
+                format_version: 2,
+                doc_id: docIdRef.current,
+                mode: "ai_free",
+                content: text,
+                checkpoints: loadedCheckpointsRef.current,
+                final_receipt: signedFinal,
+              };
+              const blob = new Blob([JSON.stringify(cogdoc, null, 2)], {
+                type: "application/json",
+              });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = generateFinalFilename(text);
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+              setArchivedAsFile(true);
+            }
+          }
+        } catch (cogdocErr) {
+          // Don't surface — verify URL still works; archival is a bonus.
+          console.error("Archival .cogdoc creation failed:", cogdocErr);
+        }
+      }
+
       setFinalizedResult(data);
       localStorage.removeItem(DRAFT_KEY);
     } catch (e: unknown) {
@@ -319,6 +392,7 @@ export default function Home() {
     setError(null);
     setLoadedDraft(null);
     setModifiedSinceLoad(false);
+    setArchivedAsFile(false);
     internalClipboard.current = "";
     docIdRef.current = null;
     loadedCheckpointsRef.current = [];
@@ -344,6 +418,13 @@ export default function Home() {
           have not been altered.
         </p>
         <div style={finalizedTextStyle}>{fullOutput}</div>
+        {archivedAsFile && (
+          <p style={mutedStyle}>
+            An archival <code>.cogdoc</code> file with the full chain
+            history has also been downloaded. The verify link above is what
+            you share; the file is for your records.
+          </p>
+        )}
         <button onClick={handleStartOver} style={secondaryButtonStyle}>
           Start a new composition
         </button>
@@ -424,20 +505,24 @@ export default function Home() {
               text.trim().length === 0 ||
               saving ||
               submitting ||
-              loadedDraft?.status === "broken"
+              loadedDraft?.status === "broken" ||
+              loadedDraft?.finalized === true
             }
             style={
               text.trim().length === 0 ||
               saving ||
               submitting ||
-              loadedDraft?.status === "broken"
+              loadedDraft?.status === "broken" ||
+              loadedDraft?.finalized === true
                 ? { ...saveButtonStyle, ...disabledButtonStyle }
                 : saveButtonStyle
             }
             title={
               loadedDraft?.status === "broken"
                 ? "Saving is disabled while the chain is broken. Use the banner above to clear and start a new composition."
-                : "Save a portable, signed .cogdoc file you can reopen later or on another device"
+                : loadedDraft?.finalized
+                  ? "This composition is finalized and cannot be re-saved. Start a new composition instead."
+                  : "Save a portable, signed .cogdoc file you can reopen later or on another device"
             }
           >
             {saving ? "Saving…" : "Save Draft"}
@@ -448,20 +533,24 @@ export default function Home() {
               text.trim().length === 0 ||
               submitting ||
               saving ||
-              loadedDraft?.status === "broken"
+              loadedDraft?.status === "broken" ||
+              loadedDraft?.finalized === true
             }
             style={
               text.trim().length === 0 ||
               submitting ||
               saving ||
-              loadedDraft?.status === "broken"
+              loadedDraft?.status === "broken" ||
+              loadedDraft?.finalized === true
                 ? { ...primaryButtonStyle, ...disabledButtonStyle }
                 : primaryButtonStyle
             }
             title={
               loadedDraft?.status === "broken"
                 ? "Finalize is disabled while the chain is broken. Use the banner above to clear and start a new composition."
-                : undefined
+                : loadedDraft?.finalized
+                  ? "This composition is already finalized."
+                  : undefined
             }
           >
             {submitting ? "Signing…" : "Finalize"}
@@ -486,6 +575,26 @@ function DraftStatusBanner({
   modified: boolean;
   onStartOver: () => void;
 }) {
+  // Finalized takes priority: a sealed composition cannot be re-certified
+  // and edits to its content do not produce a meaningful "modified" state.
+  if (state.finalized) {
+    return (
+      <div style={statusBannerStyle("green")}>
+        <div>
+          <strong>Finalized.</strong> This composition is sealed —{" "}
+          {state.checkpointCount} signed{" "}
+          {state.checkpointCount === 1 ? "entry" : "entries"} including the
+          final receipt. Save Draft and Finalize are disabled. To begin a
+          new composition, use the button below.
+        </div>
+        <div style={{ marginTop: "0.6rem" }}>
+          <button onClick={onStartOver} style={bannerButtonGreenStyle}>
+            Start a new composition
+          </button>
+        </div>
+      </div>
+    );
+  }
   // Broken trumps everything else: a broken chain cannot be re-certified
   // by saving the current text. The user must start a new composition and
   // re-enter the content. Save and Finalize are disabled in this state.
@@ -543,6 +652,17 @@ const bannerButtonStyle: React.CSSProperties = {
   color: "#7a1a1a",
   background: "transparent",
   border: "1px solid #c98080",
+  borderRadius: 6,
+  cursor: "pointer",
+};
+
+const bannerButtonGreenStyle: React.CSSProperties = {
+  padding: "0.4rem 0.85rem",
+  fontSize: "0.9rem",
+  fontFamily: "inherit",
+  color: "#1f6a3d",
+  background: "transparent",
+  border: "1px solid #95cda9",
   borderRadius: 6,
   cursor: "pointer",
 };
