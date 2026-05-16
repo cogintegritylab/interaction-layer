@@ -2,17 +2,22 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import type { ClipboardEvent, DragEvent } from "react";
+import type { ChangeEvent, ClipboardEvent, DragEvent } from "react";
 import { hashText } from "@/lib/hash";
+import {
+  verifyCogdoc,
+  type CogdocStatus,
+  type SignedCheckpoint,
+} from "@/lib/cogdoc";
 
 const DRAFT_KEY = "aife_draft_v1";
 
 type FinalizedResult = { id: string; verifyUrl: string };
 
-type SignedCheckpoint = {
-  payload: Record<string, string | number>;
-  signature: string;
-  kid: string;
+type LoadedDraft = {
+  status: CogdocStatus;
+  reason: string | null;
+  checkpointCount: number;
 };
 
 function generateDocId(): string {
@@ -63,9 +68,14 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [loadedDraft, setLoadedDraft] = useState<LoadedDraft | null>(null);
+  const [modifiedSinceLoad, setModifiedSinceLoad] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const internalClipboard = useRef<string>("");
   const docIdRef = useRef<string | null>(null);
+  const loadedCheckpointsRef = useRef<SignedCheckpoint[]>([]);
+  const loadedFinalReceiptRef = useRef<SignedCheckpoint | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem(DRAFT_KEY);
@@ -109,6 +119,51 @@ export default function Home() {
 
   const blockDrag = (e: DragEvent<HTMLTextAreaElement>) => {
     e.preventDefault();
+  };
+
+  const handleOpenDraft = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelected = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // Allow re-selecting the same file later.
+    if (!file) return;
+
+    setError(null);
+    setLoadedDraft(null);
+    setModifiedSinceLoad(false);
+
+    try {
+      const rawJson = await file.text();
+      const result = await verifyCogdoc(rawJson);
+
+      if (result.status === "invalid" || result.cogdoc === null) {
+        setError(
+          `Could not open the file: ${result.reason || "unknown error"}.`
+        );
+        return;
+      }
+
+      const { cogdoc } = result;
+      setText(cogdoc.content);
+      docIdRef.current = cogdoc.doc_id;
+      loadedCheckpointsRef.current = cogdoc.checkpoints;
+      loadedFinalReceiptRef.current = cogdoc.final_receipt;
+      setLoadedDraft({
+        status: result.status,
+        reason: result.reason,
+        checkpointCount:
+          cogdoc.checkpoints.length + (cogdoc.final_receipt ? 1 : 0),
+      });
+      setFinalizedResult(null);
+    } catch (err) {
+      setError(
+        `Failed to read file: ${
+          err instanceof Error ? err.message : "unknown error"
+        }.`
+      );
+    }
   };
 
   const handleSaveToDevice = async () => {
@@ -207,10 +262,21 @@ export default function Home() {
     setText("");
     setFinalizedResult(null);
     setError(null);
+    setLoadedDraft(null);
+    setModifiedSinceLoad(false);
     internalClipboard.current = "";
     docIdRef.current = null;
+    loadedCheckpointsRef.current = [];
+    loadedFinalReceiptRef.current = null;
     localStorage.removeItem(DRAFT_KEY);
     setTimeout(() => textareaRef.current?.focus(), 0);
+  };
+
+  const handleTextChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    setText(e.target.value);
+    if (loadedDraft && !modifiedSinceLoad) {
+      setModifiedSinceLoad(true);
+    }
   };
 
   if (finalizedResult) {
@@ -248,10 +314,18 @@ export default function Home() {
           What is this? About the protocol and the trust model →
         </Link>
       </p>
+      {loadedDraft && <DraftStatusBanner state={loadedDraft} modified={modifiedSinceLoad} />}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".cogdoc,application/json"
+        onChange={handleFileSelected}
+        style={{ display: "none" }}
+      />
       <textarea
         ref={textareaRef}
         value={text}
-        onChange={(e) => setText(e.target.value)}
+        onChange={handleTextChange}
         onCopy={handleCopy}
         onCut={handleCut}
         onPaste={handlePaste}
@@ -270,6 +344,18 @@ export default function Home() {
       <div style={toolbarStyle}>
         <span style={mutedStyle}>{text.length} characters</span>
         <div style={buttonGroupStyle}>
+          <button
+            onClick={handleOpenDraft}
+            disabled={submitting || saving}
+            style={
+              submitting || saving
+                ? { ...saveButtonStyle, ...disabledButtonStyle }
+                : saveButtonStyle
+            }
+            title="Open a previously saved .cogdoc draft"
+          >
+            Open Draft
+          </button>
           <button
             onClick={handleSaveToDevice}
             disabled={text.trim().length === 0 || saving || submitting}
@@ -302,6 +388,71 @@ export default function Home() {
       </p>
     </main>
   );
+}
+
+function DraftStatusBanner({
+  state,
+  modified,
+}: {
+  state: LoadedDraft;
+  modified: boolean;
+}) {
+  if (modified) {
+    return (
+      <div style={statusBannerStyle("neutral")}>
+        <strong>Modified since last checkpoint.</strong> Click Save to
+        Device to certify the current text.
+      </div>
+    );
+  }
+  if (state.status === "valid") {
+    return (
+      <div style={statusBannerStyle("green")}>
+        <strong>Valid certified draft.</strong>{" "}
+        {state.checkpointCount === 1
+          ? "1 signed checkpoint."
+          : `${state.checkpointCount} signed checkpoints.`}{" "}
+        The current text matches the latest signature.
+      </div>
+    );
+  }
+  if (state.status === "no_checkpoint_yet") {
+    return (
+      <div style={statusBannerStyle("neutral")}>
+        <strong>Draft loaded.</strong> No checkpoints yet. Click Save to
+        Device to certify.
+      </div>
+    );
+  }
+  if (state.status === "broken") {
+    return (
+      <div style={statusBannerStyle("red")}>
+        <strong>Certification broken.</strong>{" "}
+        {state.reason ||
+          "The text in the file does not match the latest signed checkpoint."}
+      </div>
+    );
+  }
+  return null;
+}
+
+function statusBannerStyle(
+  tone: "green" | "red" | "neutral"
+): React.CSSProperties {
+  const palette =
+    tone === "green"
+      ? { bg: "#eafaf0", border: "#b8e6c8", fg: "#1f6a3d" }
+      : tone === "red"
+      ? { bg: "#fdecec", border: "#f5c4c4", fg: "#7a1a1a" }
+      : { bg: "#f6f6f6", border: "#e0e0e0", fg: "#6b6b6b" };
+  return {
+    padding: "0.6rem 0.9rem",
+    fontSize: "0.9rem",
+    color: palette.fg,
+    background: palette.bg,
+    border: `1px solid ${palette.border}`,
+    borderRadius: 6,
+  };
 }
 
 const aboutLinkStyle: React.CSSProperties = {
