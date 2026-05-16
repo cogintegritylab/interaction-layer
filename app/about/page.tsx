@@ -103,7 +103,7 @@ export default function AboutPage() {
         this project under it is on our roadmap.
       </p>
 
-      <h2 style={h2Style}>What this tool cannot prove</h2>
+      <h2 style={h2Style}>What we cannot prove yet</h2>
       <ul style={listStyle}>
         <li style={liStyle}>
           <strong>Authorship.</strong> The receipt does not prove who composed
