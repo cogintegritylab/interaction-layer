@@ -13,10 +13,10 @@ The aim is not AI detection. The aim is to certify process conditions — to let
 - **v1.1 shipped.** Hash-only storage (the server never stores writing content), paste-to-verify, multi-issuer receipt format, public source code and verification key, /about with the full rationale.
 - **Phase 2a in progress.** Adding the `.cogdoc` local-file model with signed checkpoint chains — portable drafts across devices without server-side draft storage. Bumps the protocol to v2.
   - **2a.1** ✅ signing endpoint (`/api/checkpoint`) with session + CSRF + origin + per-session rate limit; server-side checkpoint signing using Ed25519.
-  - **2a.2** ✅ "Save Draft" button writing portable `.cogdoc` files.
+  - **2a.2** ✅ "Save for Later" button writing portable `.cogdoc` files.
   - **2a.3** ✅ "Open Draft" with local verification of the checkpoint chain.
   - **2a.4** ✅ Continuation chain + broken-state lockout (re-certifying a tampered chain requires retyping through the paste-blocked editor).
-  - **2a.5** *(current):* Finalize integration (archival `.cogdoc` with `final_receipt` produced alongside the verify URL when a chain is active) + finalized-state handling on Open Draft.
+  - **2a.5** *(current):* "Save for Later" rename, cross-device hint in instructions, defensive finalized-state handling on Open Draft (Save for Later and Finalize disabled on sealed files).
 
 ## Protocol specification
 
