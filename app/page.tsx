@@ -363,9 +363,8 @@ export default function Home() {
       <main style={pageStyle}>
         <p style={previewNoticeStyle}>
           Finalized. Click the button below to copy the text and signature
-          together (recommended, especially on mobile). The recipient can
-          click the verify link to confirm the text and timestamp have not
-          been altered.
+          together. The recipient can click the verify link to confirm the
+          text and timestamp have not been altered.
         </p>
         <button onClick={handleCopyOutput} style={primaryButtonStyle}>
           {copied ? "✓ Copied" : "Copy text + signature"}
