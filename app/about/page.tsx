@@ -228,13 +228,9 @@ export default function AboutPage() {
         journalism mode might require declared sourcing chains. A clinical
         mode might require human review of any AI-suggested diagnosis.
         These specifics belong to the communities that practice each
-        craft; the protocol gives them a vocabulary, not a verdict.
-      </p>
-      <p style={paragraphStyle}>
-        The broader bet is that AI&rsquo;s reliability cannot be
-        self-generated. It develops, where it develops at all, by being
-        tethered to accountable human judgment. The interaction layer is
-        one mechanism for that tethering.
+        craft; the protocol gives them a vocabulary, not a verdict — a way
+        to specify where AI&rsquo;s participation ends and human judgment
+        begins.
       </p>
       <p style={paragraphStyle}>
         The issuer can vary as well. The{" "}
