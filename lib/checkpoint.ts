@@ -1,13 +1,16 @@
 // Checkpoint payload construction and signing (protocol v2).
 // See SPEC.md §4 for the payload schema and §5 for canonicalization.
 
-import { canonicalReceiptJSON } from "./canonical";
+import {
+  CURRENT_CANONICAL_TEXT_V,
+  canonicalReceiptJSON,
+} from "./canonical";
 import { KEY_ID } from "./public-key";
 
 export const PROTOCOL_V2 = "interaction-layer/v2";
 export const ISSUER = "Cognitive Integrity Lab";
 export const HASH_ALGORITHM = "sha-256";
-export const CANONICAL_TEXT_V = 1;
+export const CANONICAL_TEXT_V = CURRENT_CANONICAL_TEXT_V;
 
 export type CheckpointType = "checkpoint" | "final";
 

@@ -61,7 +61,12 @@ export default function VerifyClient({
           if (!cancelled) setStatus({ kind: "invalid_signature" });
           return;
         }
-        const pastedHash = await hashText(pastedText);
+        // Apply the canonical-text version recorded in the receipt itself.
+        // Receipts that predate canonical_text_v=2 omit the field; they were
+        // signed with the original v1 algorithm.
+        const canonicalVersion: 1 | 2 =
+          receipt.canonical_text_v === 2 ? 2 : 1;
+        const pastedHash = await hashText(pastedText, canonicalVersion);
         if (cancelled) return;
         if (pastedHash !== receipt.hash) {
           setStatus({ kind: "invalid_hash" });

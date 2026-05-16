@@ -190,17 +190,23 @@ To produce deterministic bytes for hashing and signing, both text and
 payload JSON are canonicalized. Implementations MUST produce byte-identical
 canonical forms; a one-byte difference invalidates a signature.
 
-### 5.1 Canonical text (`canonical_text_v: 1`)
+### 5.1 Canonical text
 
-The transformation, applied in order:
+Two versions of the canonical-text algorithm are defined. The version used
+to produce a given receipt is recorded in its `canonical_text_v` field.
+Verifiers MUST apply the algorithm matching the version recorded in the
+receipt being checked. For legacy v1 finalize receipts that omit
+`canonical_text_v` entirely, verifiers MUST default to version 1.
+
+#### `canonical_text_v: 1` — line-structure preserving
+
+Used for receipts issued before 2026-05-16. Preserves paragraph and line
+structure in the hashed bytes.
 
 1. Apply Unicode NFC normalization to the entire string.
 2. Replace each U+00A0 (no-break space) and U+202F (narrow no-break space)
-   with U+0020 (regular space). These are visually identical to a space
-   and are commonly inserted by mobile email auto-format pipelines.
-3. Strip zero-width characters: U+200B (zero-width space), U+200C
-   (zero-width non-joiner), U+200D (zero-width joiner), U+FEFF (zero-width
-   no-break space / BOM).
+   with U+0020 (regular space).
+3. Strip zero-width characters: U+200B, U+200C, U+200D, U+FEFF.
 4. Replace all `CR LF` (U+000D U+000A) and bare `CR` (U+000D) with `LF` (U+000A).
 5. For each line, strip trailing spaces (U+0020) and tabs (U+0009).
 6. Collapse any run of three or more consecutive `LF` characters to exactly
@@ -209,10 +215,28 @@ The transformation, applied in order:
    (whitespace = space, tab, LF).
 8. The result is UTF-8 encoded for hashing.
 
-No case folding and no quote/dash substitution. Smart quotes (curly) and
-straight quotes are distinct characters and must be preserved as they
-appear; the same applies to em-dashes vs hyphens and similar typographic
-distinctions.
+#### `canonical_text_v: 2` — whitespace-insensitive *(current)*
+
+The default for new receipts. Treats all runs of any whitespace —
+spaces, tabs, single or multiple newlines, Unicode whitespace — as
+equivalent (a single space). Verification therefore survives email
+clients that re-flow paragraph breaks into inline spaces during paste
+into compose windows. Line structure is no longer cryptographically
+pinned; the words themselves remain bit-exact.
+
+1. Apply Unicode NFC normalization to the entire string.
+2. Strip zero-width characters: U+200B, U+200C, U+200D, U+FEFF.
+3. Split the string on any run of one or more whitespace characters
+   (the JavaScript `\s+` class: U+0020, U+0009, U+000A, U+000B, U+000C,
+   U+000D, U+00A0, U+1680, U+2000–U+200A, U+2028, U+2029, U+202F, U+205F,
+   U+3000, and U+FEFF), discarding empty tokens.
+4. Rejoin the non-empty tokens with a single U+0020.
+5. The result is UTF-8 encoded for hashing.
+
+No case folding and no quote/dash substitution under either version.
+Smart quotes (curly) and straight quotes are distinct characters and
+must be preserved as they appear; the same applies to em-dashes vs
+hyphens and similar typographic distinctions.
 
 ### 5.2 Canonical payload JSON
 

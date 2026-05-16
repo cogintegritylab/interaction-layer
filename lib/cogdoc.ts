@@ -3,7 +3,10 @@
 // All verification happens client-side; the pasted/loaded text never leaves
 // the user's browser.
 
-import { canonicalReceiptJSON } from "./canonical";
+import {
+  canonicalReceiptJSON,
+  type CanonicalTextVersion,
+} from "./canonical";
 import { hashText, sha256Hex } from "./hash";
 import { verifySignature } from "./receipt";
 
@@ -11,7 +14,7 @@ const PROTOCOL_V2 = "interaction-layer/v2";
 const ALLOWED_KID = "cil-v1";
 const ALLOWED_MODES = new Set(["ai_free"]);
 const ALLOWED_HASH_ALG = "sha-256";
-const ALLOWED_CANONICAL_TEXT_V = 1;
+const ALLOWED_CANONICAL_TEXT_V = new Set<number>([1, 2]);
 
 export type SignedCheckpointPayload = {
   v: string;
@@ -157,7 +160,7 @@ export async function verifyCogdoc(
     if (cp.payload.type !== "checkpoint") {
       return fail(`${label}: wrong type (expected "checkpoint").`);
     }
-    if (cp.payload.canonical_text_v !== ALLOWED_CANONICAL_TEXT_V) {
+    if (!ALLOWED_CANONICAL_TEXT_V.has(cp.payload.canonical_text_v)) {
       return fail(`${label}: unsupported canonical_text_v.`);
     }
     if (cp.payload.prev_checkpoint_hash !== prevHash) {
@@ -189,7 +192,7 @@ export async function verifyCogdoc(
     if (fr.payload.type !== "final") {
       return fail("Final receipt: wrong type.");
     }
-    if (fr.payload.canonical_text_v !== ALLOWED_CANONICAL_TEXT_V) {
+    if (!ALLOWED_CANONICAL_TEXT_V.has(fr.payload.canonical_text_v)) {
       return fail("Final receipt: unsupported canonical_text_v.");
     }
     if (fr.payload.prev_checkpoint_hash !== prevHash) {
@@ -204,11 +207,16 @@ export async function verifyCogdoc(
     }
   }
 
-  // 9. Compare current text hash to the latest signed text hash.
-  const currentHash = await hashText(cogdoc.content);
-  const latestSignedHash = cogdoc.final_receipt
-    ? cogdoc.final_receipt.payload.text_hash
-    : cogdoc.checkpoints[cogdoc.checkpoints.length - 1].payload.text_hash;
+  // 9. Compare current text hash to the latest signed text hash, applying
+  // the canonical-text version declared by the latest signed entry.
+  const latestPayload = cogdoc.final_receipt
+    ? cogdoc.final_receipt.payload
+    : cogdoc.checkpoints[cogdoc.checkpoints.length - 1].payload;
+  const latestSignedHash = latestPayload.text_hash;
+  const currentHash = await hashText(
+    cogdoc.content,
+    latestPayload.canonical_text_v as CanonicalTextVersion
+  );
 
   if (currentHash !== latestSignedHash) {
     return {

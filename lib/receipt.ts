@@ -1,4 +1,7 @@
-import { canonicalReceiptJSON } from "./canonical";
+import {
+  CURRENT_CANONICAL_TEXT_V,
+  canonicalReceiptJSON,
+} from "./canonical";
 import { hashText } from "./hash";
 import { KEY_ID, PUBLIC_KEY_BASE64 } from "./public-key";
 
@@ -16,6 +19,9 @@ export type Receipt = {
   issued_at: string;
   issuer: string;
   key_id: string;
+  // Present on receipts created after canonical-text v2 shipped (2026-05-16).
+  // Older receipts omit this field and are interpreted as v1.
+  canonical_text_v?: number;
 };
 
 function base64ToArrayBuffer(b64: string): ArrayBuffer {
@@ -40,7 +46,7 @@ export async function createSignedReceipt(
   mode: Mode,
   privateKeyBase64: string
 ): Promise<{ receipt: Receipt; canonical: string; signature: string }> {
-  const hash = await hashText(text);
+  const hash = await hashText(text, CURRENT_CANONICAL_TEXT_V);
   const receipt: Receipt = {
     protocol: PROTOCOL,
     mode,
@@ -49,6 +55,7 @@ export async function createSignedReceipt(
     issued_at: new Date().toISOString(),
     issuer: ISSUER,
     key_id: KEY_ID,
+    canonical_text_v: CURRENT_CANONICAL_TEXT_V,
   };
   const canonical = canonicalReceiptJSON(
     receipt as unknown as Record<string, string | number>
