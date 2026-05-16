@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent, ClipboardEvent, DragEvent } from "react";
-import { hashText } from "@/lib/hash";
+import { hashText, sha256Hex } from "@/lib/hash";
+import { canonicalReceiptJSON } from "@/lib/canonical";
 import {
   verifyCogdoc,
   type CogdocStatus,
@@ -58,6 +59,20 @@ function generateFilename(text: string): string {
     .replace(/^-+|-+$/g, "");
 
   return slug ? `${datePrefix}-${slug}.cogdoc` : `${datePrefix}.cogdoc`;
+}
+
+// SHA-256 hex of the canonical payload bytes of the last checkpoint in a
+// chain. Used to build the next checkpoint's prev_checkpoint_hash. Returns
+// the literal "genesis" string for an empty chain.
+async function lastCheckpointCanonicalHash(
+  checkpoints: SignedCheckpoint[]
+): Promise<string> {
+  if (checkpoints.length === 0) return "genesis";
+  const last = checkpoints[checkpoints.length - 1];
+  const canonical = canonicalReceiptJSON(
+    last.payload as unknown as Record<string, string | number>
+  );
+  return sha256Hex(canonical);
 }
 
 export default function Home() {
@@ -177,10 +192,38 @@ export default function Home() {
           "Session not initialized. Reload the page and try again."
         );
       }
-      if (!docIdRef.current) {
-        docIdRef.current = generateDocId();
+
+      // Decide whether this save extends the existing chain or starts a
+      // fresh one. A broken or already-finalized chain cannot be extended:
+      // per SPEC.md §10, regaining a certified state requires a new doc_id.
+      const chainBroken = loadedDraft?.status === "broken";
+      const wasFinalized = loadedFinalReceiptRef.current !== null;
+      const continueChain =
+        !chainBroken &&
+        !wasFinalized &&
+        loadedCheckpointsRef.current.length > 0;
+
+      let docId: string;
+      let prevHash: string;
+
+      if (continueChain) {
+        docId = docIdRef.current as string;
+        prevHash = await lastCheckpointCanonicalHash(
+          loadedCheckpointsRef.current
+        );
+      } else {
+        // Fresh chain: either nothing was loaded, or the chain is broken /
+        // finalized. In the latter two cases, generate a new doc_id and
+        // abandon the previous chain in memory.
+        if (chainBroken || wasFinalized || !docIdRef.current) {
+          docIdRef.current = generateDocId();
+          loadedCheckpointsRef.current = [];
+          loadedFinalReceiptRef.current = null;
+        }
+        docId = docIdRef.current;
+        prevHash = "genesis";
       }
-      const docId = docIdRef.current;
+
       const textHashHex = await hashText(text);
 
       const response = await fetch("/api/checkpoint", {
@@ -193,7 +236,7 @@ export default function Home() {
           doc_id: docId,
           mode: "ai_free",
           text_hash: textHashHex,
-          prev_checkpoint_hash: "genesis",
+          prev_checkpoint_hash: prevHash,
         }),
       });
 
@@ -203,12 +246,15 @@ export default function Home() {
       }
       const signed: SignedCheckpoint = await response.json();
 
+      // Extend the in-memory chain.
+      loadedCheckpointsRef.current = [...loadedCheckpointsRef.current, signed];
+
       const cogdoc = {
         format_version: 2,
         doc_id: docId,
         mode: "ai_free",
         content: text,
-        checkpoints: [signed],
+        checkpoints: loadedCheckpointsRef.current,
         final_receipt: null,
       };
 
@@ -223,6 +269,15 @@ export default function Home() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+
+      // Reflect the new chain state in the banner: just-saved is always
+      // valid, and the checkpoint count is the in-memory chain length.
+      setLoadedDraft({
+        status: "valid",
+        reason: null,
+        checkpointCount: loadedCheckpointsRef.current.length,
+      });
+      setModifiedSinceLoad(false);
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Save failed";
       setError(message);
@@ -364,9 +419,17 @@ export default function Home() {
                 ? { ...saveButtonStyle, ...disabledButtonStyle }
                 : saveButtonStyle
             }
-            title="Save a portable .cogdoc file to your device"
+            title={
+              loadedDraft?.status === "broken"
+                ? "Save the current text as a new certified draft (the broken chain is abandoned)"
+                : "Save a portable .cogdoc file to your device"
+            }
           >
-            {saving ? "Saving…" : "Save to Device"}
+            {saving
+              ? "Saving…"
+              : loadedDraft?.status === "broken"
+                ? "Save as New Draft"
+                : "Save to Device"}
           </button>
           <button
             onClick={handleFinalize}

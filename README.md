@@ -14,8 +14,8 @@ The aim is not AI detection. The aim is to certify process conditions — to let
 - **Phase 2a in progress.** Adding the `.cogdoc` local-file model with signed checkpoint chains — portable drafts across devices without server-side draft storage. Bumps the protocol to v2.
   - **2a.1** ✅ signing endpoint (`/api/checkpoint`) with session + CSRF + origin + per-session rate limit; server-side checkpoint signing using Ed25519.
   - **2a.2** ✅ "Save to Device" button writing `.cogdoc` files.
-  - **2a.3** *(current):* "Open Draft" with local verification of the checkpoint chain.
-  - **2a.4:** Continuation chain (write → save → open → write → save).
+  - **2a.3** ✅ "Open Draft" with local verification of the checkpoint chain.
+  - **2a.4** *(current):* Continuation chain (subsequent saves chain to previous; broken or finalized files start a fresh doc_id).
   - **2a.5:** Polish + integration with Finalize + UI for chain status.
 
 ## Protocol specification
