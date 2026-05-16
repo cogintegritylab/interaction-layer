@@ -11,6 +11,11 @@ or a compatible issuer.
 The protocol is intentionally simple. Trust derives from openness and
 mathematics, not obscurity.
 
+**Implementation status.** This document specifies the full v2 protocol.
+The deployed reference implementation supports v1 finalize-only receipts;
+the v2 checkpoint endpoint and `.cogdoc` flow are landing in stages. See
+[README](README.md) for current milestone status.
+
 ## Table of contents
 
 1. [Scope and non-goals](#1-scope-and-non-goals)
@@ -50,8 +55,11 @@ mathematics, not obscurity.
   integrity of the text and timestamps after declaration.
 - This protocol does **not** detect AI-generated content. There is no
   classifier; the protocol does not inspect prose.
-- This protocol does **not** prevent a determined actor with our open
-  source from forging checkpoints (see §13).
+- This protocol does **not** prevent a determined actor from obtaining
+  signed checkpoints through a modified or scripted client at assurance
+  level L1 (see §13 and §14). The signatures themselves are
+  cryptographically unforgeable; what cannot be enforced at L1 is that
+  the declared composition conditions were actually followed.
 - This protocol does **not** require any cross-device synchronization
   infrastructure on the server side. Portability across devices is achieved
   through the user moving the `.cogdoc` file (e.g., via iCloud Drive).
@@ -381,7 +389,7 @@ receipt structure was:
 {
   "protocol": "interaction-layer/v1",
   "mode": "ai_free",
-  "hash_algorithm": "sha256",
+  "hash_algorithm": "sha-256",
   "hash": "...",
   "issued_at": "...",
   "issuer": "Cognitive Integrity Lab",
@@ -442,6 +450,10 @@ new checkpoints use a fresh key. Receipts signed by the compromised key
 SHOULD be displayed by verifiers with a warning indicator.
 
 ## 13. What this protocol proves (and does not)
+
+The protocol verifies signed process declarations and canonicalized text
+integrity. It does not verify the lived composition event unless a stronger
+client or issuer assurance layer (see §14) is added.
 
 ### What is proved
 
