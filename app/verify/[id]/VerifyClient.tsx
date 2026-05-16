@@ -106,6 +106,9 @@ export default function VerifyClient({
         value={pastedText}
         onChange={(e) => setPastedText(e.target.value)}
         placeholder="Paste the text from the message here…"
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
         spellCheck={false}
         style={textareaStyle}
       />

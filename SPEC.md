@@ -194,17 +194,25 @@ canonical forms; a one-byte difference invalidates a signature.
 
 The transformation, applied in order:
 
-1. Replace all `CR LF` (U+000D U+000A) and bare `CR` (U+000D) with `LF` (U+000A).
-2. For each line, strip trailing spaces (U+0020) and tabs (U+0009).
-3. Collapse any run of three or more consecutive `LF` characters to exactly
+1. Apply Unicode NFC normalization to the entire string.
+2. Replace each U+00A0 (no-break space) and U+202F (narrow no-break space)
+   with U+0020 (regular space). These are visually identical to a space
+   and are commonly inserted by mobile email auto-format pipelines.
+3. Strip zero-width characters: U+200B (zero-width space), U+200C
+   (zero-width non-joiner), U+200D (zero-width joiner), U+FEFF (zero-width
+   no-break space / BOM).
+4. Replace all `CR LF` (U+000D U+000A) and bare `CR` (U+000D) with `LF` (U+000A).
+5. For each line, strip trailing spaces (U+0020) and tabs (U+0009).
+6. Collapse any run of three or more consecutive `LF` characters to exactly
    two `LF` characters.
-4. Strip leading and trailing whitespace from the entire string
+7. Strip leading and trailing whitespace from the entire string
    (whitespace = space, tab, LF).
-5. The result is UTF-8 encoded for hashing.
+8. The result is UTF-8 encoded for hashing.
 
-No Unicode normalization (NFC/NFD), no case folding, no quote
-substitution. Meaningful character differences (e.g., curly quotes vs.
-straight) must be preserved as they appear.
+No case folding and no quote/dash substitution. Smart quotes (curly) and
+straight quotes are distinct characters and must be preserved as they
+appear; the same applies to em-dashes vs hyphens and similar typographic
+distinctions.
 
 ### 5.2 Canonical payload JSON
 

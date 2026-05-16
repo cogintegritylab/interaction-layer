@@ -3,6 +3,16 @@
 
 export function canonicalText(input: string): string {
   return input
+    // Unicode normalization (NFC) so visually identical characters with
+    // different code-point sequences (decomposed vs precomposed) hash the same.
+    .normalize("NFC")
+    // Mobile email auto-format frequently inserts these whitespace variants
+    // in place of regular spaces; treat them as the spaces they visually are.
+    .replace(/ /g, " ") // no-break space
+    .replace(/ /g, " ") // narrow no-break space
+    // Strip zero-width characters that some auto-format pipelines inject.
+    .replace(/[​-‍﻿]/g, "")
+    // Line ending normalization.
     .replace(/\r\n/g, "\n")
     .replace(/\r/g, "\n")
     .split("\n")
