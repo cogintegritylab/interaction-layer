@@ -369,7 +369,13 @@ export default function Home() {
           What is this? About the protocol and the trust model →
         </Link>
       </p>
-      {loadedDraft && <DraftStatusBanner state={loadedDraft} modified={modifiedSinceLoad} />}
+      {loadedDraft && (
+        <DraftStatusBanner
+          state={loadedDraft}
+          modified={modifiedSinceLoad}
+          onStartOver={handleStartOver}
+        />
+      )}
       <input
         ref={fileInputRef}
         type="file"
@@ -413,31 +419,48 @@ export default function Home() {
           </button>
           <button
             onClick={handleSaveToDevice}
-            disabled={text.trim().length === 0 || saving || submitting}
+            disabled={
+              text.trim().length === 0 ||
+              saving ||
+              submitting ||
+              loadedDraft?.status === "broken"
+            }
             style={
-              text.trim().length === 0 || saving || submitting
+              text.trim().length === 0 ||
+              saving ||
+              submitting ||
+              loadedDraft?.status === "broken"
                 ? { ...saveButtonStyle, ...disabledButtonStyle }
                 : saveButtonStyle
             }
             title={
               loadedDraft?.status === "broken"
-                ? "Save the current text as a new certified draft (the broken chain is abandoned)"
+                ? "Saving is disabled while the chain is broken. Use the banner above to clear and start a new composition."
                 : "Save a portable .cogdoc file to your device"
             }
           >
-            {saving
-              ? "Saving…"
-              : loadedDraft?.status === "broken"
-                ? "Save as New Draft"
-                : "Save to Device"}
+            {saving ? "Saving…" : "Save to Device"}
           </button>
           <button
             onClick={handleFinalize}
-            disabled={text.trim().length === 0 || submitting || saving}
+            disabled={
+              text.trim().length === 0 ||
+              submitting ||
+              saving ||
+              loadedDraft?.status === "broken"
+            }
             style={
-              text.trim().length === 0 || submitting || saving
+              text.trim().length === 0 ||
+              submitting ||
+              saving ||
+              loadedDraft?.status === "broken"
                 ? { ...primaryButtonStyle, ...disabledButtonStyle }
                 : primaryButtonStyle
+            }
+            title={
+              loadedDraft?.status === "broken"
+                ? "Finalize is disabled while the chain is broken. Use the banner above to clear and start a new composition."
+                : undefined
             }
           >
             {submitting ? "Signing…" : "Finalize"}
@@ -456,10 +479,32 @@ export default function Home() {
 function DraftStatusBanner({
   state,
   modified,
+  onStartOver,
 }: {
   state: LoadedDraft;
   modified: boolean;
+  onStartOver: () => void;
 }) {
+  // Broken trumps everything else: a broken chain cannot be re-certified
+  // by saving the current text. The user must start a new composition and
+  // re-enter the content. Save and Finalize are disabled in this state.
+  if (state.status === "broken") {
+    return (
+      <div style={statusBannerStyle("red")}>
+        <div>
+          <strong>Certification broken.</strong> The text in this file does
+          not match its original signature. Saving and finalizing are
+          disabled. To certify text again, clear the editor and re-enter
+          the content by hand.
+        </div>
+        <div style={{ marginTop: "0.6rem" }}>
+          <button onClick={onStartOver} style={bannerButtonStyle}>
+            Clear and start a new composition
+          </button>
+        </div>
+      </div>
+    );
+  }
   if (modified) {
     return (
       <div style={statusBannerStyle("neutral")}>
@@ -487,17 +532,19 @@ function DraftStatusBanner({
       </div>
     );
   }
-  if (state.status === "broken") {
-    return (
-      <div style={statusBannerStyle("red")}>
-        <strong>Certification broken.</strong>{" "}
-        {state.reason ||
-          "The text in the file does not match the latest signed checkpoint."}
-      </div>
-    );
-  }
   return null;
 }
+
+const bannerButtonStyle: React.CSSProperties = {
+  padding: "0.4rem 0.85rem",
+  fontSize: "0.9rem",
+  fontFamily: "inherit",
+  color: "#7a1a1a",
+  background: "transparent",
+  border: "1px solid #c98080",
+  borderRadius: 6,
+  cursor: "pointer",
+};
 
 function statusBannerStyle(
   tone: "green" | "red" | "neutral"
