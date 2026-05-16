@@ -156,6 +156,17 @@ export default function VerifyClient({
       </section>
 
       <section style={detailSectionStyle}>
+        <h2 style={subheadingStyle}>Try it yourself</h2>
+        <p style={paragraphStyle}>
+          This same site is also where AI-free compositions are made. To
+          write your own,{" "}
+          <Link href="/" style={linkStyle}>
+            visit the composition page →
+          </Link>
+        </p>
+      </section>
+
+      <section style={detailSectionStyle}>
         <h2 style={subheadingStyle}>How can I verify this independently?</h2>
         <p style={mutedStyle}>
           These four pieces are sufficient to verify the signature without
