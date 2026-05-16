@@ -409,7 +409,7 @@ export default function Home() {
       <input
         ref={fileInputRef}
         type="file"
-        accept=".cogdoc,application/json"
+        accept="*/*"
         onChange={handleFileSelected}
         style={{ display: "none" }}
       />
