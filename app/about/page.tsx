@@ -163,10 +163,6 @@ export default function AboutPage() {
       </p>
       <ul style={listStyle}>
         <li style={liStyle}>
-          <code style={codeStyle}>ai_free</code> — composed by hand, in a
-          paste-blocked environment (this mode).
-        </li>
-        <li style={liStyle}>
           <code style={codeStyle}>cognitive_authorship_check</code> — a
           follow-up assessment in which the writer is asked to extend the
           composition, consider alternatives, or restate it in different
