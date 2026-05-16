@@ -191,33 +191,27 @@ export default function AboutPage() {
           supplies substantive content.
         </li>
         <li style={liStyle}>
-          <code style={codeStyle}>light_editing</code> — composed by the
-          writer; AI&rsquo;s role is constrained to grammar, spelling, and
-          basic style, without contributing substantive content.
-        </li>
-        <li style={liStyle}>
           <code style={codeStyle}>ai_assisted</code> — composed under
-          circumscribed AI involvement (e.g., suggestion-only,
-          paraphrasing, structural feedback). The mode constrains{" "}
-          <em>how</em> AI may enter the composition, rather than just
-          disclosing that it did. The protocol&rsquo;s role is to set terms
-          on AI participation, preserving human judgment within those terms.
-        </li>
-        <li style={liStyle}>
-          <code style={codeStyle}>translation_active</code> — passed through
-          translation; original language and provider recorded.
+          circumscribed AI involvement, with the writer specifying how AI
+          may enter: light editing of grammar and style, translation,
+          paraphrasing, structural feedback, or other declared roles. The
+          mode constrains <em>how</em> AI may enter the composition rather
+          than just disclosing that it did.
         </li>
         <li style={liStyle}>
           <code style={codeStyle}>human_reviewed</code> — AI-produced text
           reviewed and approved by a named human.
         </li>
         <li style={liStyle}>
-          <code style={codeStyle}>classroom_exam_mode</code> — produced under
-          monitored exam conditions.
+          <code style={codeStyle}>classroom_exam_mode</code> — produced
+          under exam conditions agreed in advance and certified through the
+          protocol rather than through proctoring. Suited to remote
+          learning that wants neither surveillance software nor blue-book
+          substitutes.
         </li>
         <li style={liStyle}>
           Professional modes such as{" "}
-          <code style={codeStyle}>medical_diagnosis_mode</code>,{" "}
+          <code style={codeStyle}>clinical_note_reviewed</code>,{" "}
           <code style={codeStyle}>legal_brief_certified_mode</code>, or{" "}
           <code style={codeStyle}>journalism_sourced_mode</code> —
           placeholder names for what medical, legal, journalistic, and other
@@ -226,16 +220,34 @@ export default function AboutPage() {
         </li>
       </ul>
       <p style={paragraphStyle}>
+        What counts as good judgment varies from domain to domain — and
+        should be defined by practitioners in each domain, not by AI or AI
+        companies. A legal mode might require, for instance, that no
+        confidential information was submitted to any AI service and that
+        a named attorney reviewed the brief&rsquo;s reasoning. A
+        journalism mode might require declared sourcing chains. A clinical
+        mode might require human review of any AI-suggested diagnosis.
+        These specifics belong to the communities that practice each
+        craft; the protocol gives them a vocabulary, not a verdict.
+      </p>
+      <p style={paragraphStyle}>
+        The broader bet is that AI&rsquo;s reliability cannot be
+        self-generated. It develops, where it develops at all, by being
+        tethered to accountable human judgment. The interaction layer is
+        one mechanism for that tethering.
+      </p>
+      <p style={paragraphStyle}>
         The issuer can vary as well. The{" "}
         <a href="https://sites.temple.edu/cilab/" style={linkStyle}>
           Cognitive Integrity Lab
         </a>{" "}
         is the first issuer, but the format is designed to be open: in
-        principle, Gmail, Outlook, Canvas, universities, journals, and
-        hospitals could each issue their own signed receipts under a shared
-        vocabulary. The value of the system is not that one lab signs
-        everything forever; it is that anyone can issue, anyone can verify,
-        and the protocol vocabulary is public.
+        principle, email clients, learning-management systems like Canvas,
+        universities, journals, hospitals, and other institutions could
+        each issue their own signed receipts under a shared vocabulary.
+        The value of the system is not that one lab signs everything
+        forever; it is that anyone can issue, anyone can verify, and the
+        protocol vocabulary is public.
       </p>
 
       <h2 style={h2Style}>Verifying independently</h2>
