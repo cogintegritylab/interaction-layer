@@ -157,7 +157,7 @@ export default function VerifyClient({
 
       <section style={detailSectionStyle}>
         <h2 style={subheadingStyle}>Try it yourself</h2>
-        <p style={paragraphStyle}>
+        <p style={qaAnswerStyle}>
           This same site is also where AI-free compositions are made. To
           write your own,{" "}
           <Link href="/" style={linkStyle}>
