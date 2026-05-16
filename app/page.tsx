@@ -362,7 +362,8 @@ export default function Home() {
       <p style={mutedStyle}>
         Copy, cut, and paste work within this box, but text cannot enter from
         or leave to other apps. Your draft is saved in this browser until you
-        click Finalize.
+        click Finalize. To continue later or on another device, click Save
+        Draft for a portable signed copy.
       </p>
       <p style={aboutPromptStyle}>
         <Link href="/about" style={aboutPromptAnchorStyle}>
@@ -436,10 +437,10 @@ export default function Home() {
             title={
               loadedDraft?.status === "broken"
                 ? "Saving is disabled while the chain is broken. Use the banner above to clear and start a new composition."
-                : "Save a portable .cogdoc file to your device"
+                : "Save a portable, signed .cogdoc file you can reopen later or on another device"
             }
           >
-            {saving ? "Saving…" : "Save to Device"}
+            {saving ? "Saving…" : "Save Draft"}
           </button>
           <button
             onClick={handleFinalize}
@@ -508,8 +509,8 @@ function DraftStatusBanner({
   if (modified) {
     return (
       <div style={statusBannerStyle("neutral")}>
-        <strong>Modified since last checkpoint.</strong> Click Save to
-        Device to certify the current text.
+        <strong>Modified since last checkpoint.</strong> Click Save Draft
+        to certify the current text.
       </div>
     );
   }
@@ -527,8 +528,8 @@ function DraftStatusBanner({
   if (state.status === "no_checkpoint_yet") {
     return (
       <div style={statusBannerStyle("neutral")}>
-        <strong>Draft loaded.</strong> No checkpoints yet. Click Save to
-        Device to certify.
+        <strong>Draft loaded.</strong> No checkpoints yet. Click Save
+        Draft to certify.
       </div>
     );
   }

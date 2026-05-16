@@ -618,7 +618,7 @@ Notes for implementers reading the reference code:
 The reference implementation's `.cogdoc` flow (Phase 2a) adds:
 
 - `POST /api/checkpoint` — the signing endpoint described in §8.
-- "Save to Device" — a button on the composition page that triggers a
+- "Save Draft" — a button on the composition page that triggers a
   checkpoint request, embeds the response in a `.cogdoc`, and saves the
   file via browser download.
 - "Open Draft" — a button on the composition page that loads a `.cogdoc`
