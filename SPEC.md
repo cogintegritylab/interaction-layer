@@ -45,9 +45,10 @@ the v2 checkpoint endpoint and `.cogdoc` flow are landing in stages. See
 - Define the minimum security posture for the signing endpoint such that
   trivial abuse (e.g., one-line curl) is blocked without surveilling users
   or interrupting legitimate writing.
-- This protocol does **not** prove human authorship. It certifies the
-  declared conditions of the composition, plus the integrity of the text
-  and timestamps after declaration.
+- This protocol does **not** prove human authorship. It produces a
+  cryptographically signed receipt binding the editor mode, the text, and
+  the time of signing. The signed bundle is tamper-evident and publicly
+  verifiable.
 - This protocol does **not** detect AI-generated content. There is no
   classifier; the protocol does not inspect prose.
 - This protocol does **not** require any cross-device synchronization
@@ -366,9 +367,12 @@ A `.cogdoc` opened in a verifier-aware application is in exactly one of:
 - **`CERTIFICATION_BROKEN`**: chain checks pass for prior signatures, but
   the current text hash does NOT match the last checkpoint. The text has
   been modified outside the editor since the last certification. The
-  editor MUST display the broken state prominently. The user MAY continue
-  editing, but a new chain (from a new `doc_id`) is required to regain
-  certified state. The broken file is preserved for the user's reference.
+  editor MUST display the broken state prominently and MUST disable any
+  in-place re-certification (Save and Finalize). To regain a certified
+  state, the user must clear the editor and re-enter the content through
+  the normal paste-blocked composition flow, which produces a fresh
+  `doc_id` and a new chain. The broken file is preserved for the user's
+  reference.
 
 Implementations MAY add transition states (e.g., "editing,
 certification-pending-on-save") but these MUST NOT be reported as
@@ -447,9 +451,10 @@ SHOULD be displayed by verifiers with a warning indicator.
 
 ## 13. What this protocol proves (and does not)
 
-The protocol verifies signed process declarations and canonicalized text
-integrity. It does not verify the lived composition event unless a stronger
-client or issuer assurance layer (see §14) is added.
+The protocol binds an editor mode, a text fingerprint, and a timestamp
+under a cryptographic signature, with chained checkpoints that detect
+tampering after the fact. It does not verify the lived composition event
+unless a stronger client or issuer assurance layer (see §14) is added.
 
 ### What is proved
 
@@ -471,8 +476,8 @@ Given a `.cogdoc` in `VALID_CERTIFIED` state:
   or other external sources. No automated tool — not even a
   hypothetically perfect AI detector — can verify what a writer was
   reading or thinking during composition. The protocol takes a first
-  step in that direction by providing a cryptographic record of the
-  declared process and a tamper-evident seal on the result.
+  step in that direction with a tamper-evident cryptographic record of
+  the editor mode, the text, and the time of signing.
 - That the timestamps are genuinely contemporaneous and not backdated
   by the issuer (this requires an independent timestamping service such
   as OpenTimestamps; not specified in this version).
@@ -480,12 +485,12 @@ Given a `.cogdoc` in `VALID_CERTIFIED` state:
   published source code (this requires reproducible builds with
   cryptographic attestations; not specified in this version).
 
-The protocol certifies *process declarations and integrity*, not
-authorship in any deep sense. Implementations and user-facing copy MUST
-not overclaim. See [/about](https://interaction.cognitio.fyi/about) for
-the user-facing version of these limits, and §14 for the assurance-level
-framework that locates the current implementation in a broader trust
-landscape.
+The protocol certifies *the editor mode, the text, and the time of
+signing*, not authorship in any deep sense. Implementations and
+user-facing copy MUST not overclaim. See
+[/about](https://interaction.cognitio.fyi/about) for the user-facing
+version of these limits, and §14 for the assurance-level framework that
+locates the current implementation in a broader trust landscape.
 
 ## 14. Assurance levels
 

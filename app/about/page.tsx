@@ -29,10 +29,10 @@ export default function AboutPage() {
 
       <p style={paragraphStyle}>
         Each composition finalized here produces a cryptographically signed
-        receipt that records what mode the writer declared, when the text
-        was finalized, and a one-way fingerprint of the exact text. The
-        receipt is publicly verifiable, but the writing itself is never
-        stored on this server.
+        receipt recording the editor mode in effect, the time of signing,
+        and a one-way fingerprint of the exact text. The receipt is
+        publicly verifiable, but the writing itself is never stored on this
+        server.
       </p>
 
       <h2 style={h2Style}>The cryptographic principle</h2>
