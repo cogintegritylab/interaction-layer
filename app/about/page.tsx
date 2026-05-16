@@ -36,9 +36,7 @@ export default function AboutPage() {
       </p>
 
       <p style={paragraphStyle}>
-        For the full technical specification — file format,
-        canonicalization rules, signing endpoint contract, verification
-        algorithm, and the five-level assurance framework — see{" "}
+        For the full technical specification, see{" "}
         <a
           href="https://github.com/cogintegritylab/interaction-layer/blob/main/SPEC.md"
           style={linkStyle}
@@ -145,13 +143,14 @@ export default function AboutPage() {
         <em>was anyone home?</em>
       </p>
       <p style={paragraphStyle}>
-        Detection by style also damages what it claims to protect. Em-dashes,
-        semicolons, and well-formed paragraphs become evidence against the
-        writer; choppy prose is rewarded, care is punished. Most stylistic
-        formulas exist for reasons. The deeper cost of abandoning them is
-        ceding authority over language to whoever runs the largest models
-        and detectors — language stops being a distributed inheritance and
-        becomes a centralized verdict on what counts as human.
+        Detection by style also damages what it claims to protect.
+        Em-dashes, semicolons, and well-formed paragraphs become evidence
+        against the writer; choppy prose is rewarded, care is punished.
+        Most stylistic formulas exist for reasons. The deeper cost of
+        abandoning them is ceding authority over language to whoever runs
+        the largest models and detectors. Language stops being a
+        distributed inheritance and becomes a centralized verdict on what
+        counts as human.
       </p>
       <p style={paragraphStyle}>
         This tool does not look at your prose. Use em-dashes to your
@@ -199,10 +198,6 @@ export default function AboutPage() {
           than just disclosing that it did.
         </li>
         <li style={liStyle}>
-          <code style={codeStyle}>human_reviewed</code> — AI-produced text
-          reviewed and approved by a named human.
-        </li>
-        <li style={liStyle}>
           <code style={codeStyle}>classroom_exam_mode</code> — produced
           under exam conditions agreed in advance and certified through the
           protocol rather than through proctoring. Suited to remote
@@ -220,20 +215,19 @@ export default function AboutPage() {
         </li>
       </ul>
       <p style={paragraphStyle}>
-        What counts as good judgment varies from domain to domain — and
-        should be defined by practitioners in each domain, not by AI or AI
+        What counts as judgment varies from domain to domain, and should
+        be defined by practitioners in each domain, not by AI or AI
         companies. A legal mode might require, for instance, that no
         confidential information was submitted to any AI service and that
         a named attorney reviewed the brief&rsquo;s reasoning. A
         journalism mode might require declared sourcing chains. A clinical
         mode might require human review of any AI-suggested diagnosis.
         These specifics belong to the communities that practice each
-        craft; the protocol gives them a vocabulary, not a verdict — a way
-        to specify where AI&rsquo;s participation ends and human judgment
-        begins.
+        craft; the protocol gives them a way to specify where AI&rsquo;s
+        participation ends and human judgment begins.
       </p>
       <p style={paragraphStyle}>
-        The issuer can vary as well. The{" "}
+        The{" "}
         <a href="https://sites.temple.edu/cilab/" style={linkStyle}>
           Cognitive Integrity Lab
         </a>{" "}
