@@ -339,15 +339,17 @@ export default function Home() {
   };
 
   if (finalizedResult) {
-    const fullOutput = `${text}\n\nAI-free | ${finalizedResult.verifyUrl}`;
     return (
       <main style={pageStyle}>
         <p style={previewNoticeStyle}>
-          Finalized. Select and copy the text below to paste elsewhere. The
-          recipient can click the verify link to confirm the text and timestamp
-          have not been altered.
+          Finalized. Select and copy the text and signature line below to
+          paste elsewhere. The recipient can click the verify link to confirm
+          the text and timestamp have not been altered.
         </p>
-        <div style={finalizedTextStyle}>{fullOutput}</div>
+        <div style={finalizedTextStyle}>{text}</div>
+        <div style={finalizedTextStyle}>
+          AI-free | {finalizedResult.verifyUrl}
+        </div>
         <button onClick={handleStartOver} style={secondaryButtonStyle}>
           Start a new composition
         </button>
