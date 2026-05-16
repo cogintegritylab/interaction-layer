@@ -8,8 +8,8 @@ process, and verification semantics of the interaction-layer protocol. It is
 intended to be sufficient for an independent implementer to build a verifier
 or a compatible issuer.
 
-The protocol is intentionally simple. Trust derives from openness and
-mathematics, not obscurity.
+The protocol is intentionally simple. Trust derives from openness, public
+verification, and mathematics.
 
 **Implementation status.** This document specifies the full v2 protocol.
 The deployed reference implementation supports v1 finalize-only receipts;
@@ -18,7 +18,7 @@ the v2 checkpoint endpoint and `.cogdoc` flow are landing in stages. See
 
 ## Table of contents
 
-1. [Scope and non-goals](#1-scope-and-non-goals)
+1. [Scope](#1-scope)
 2. [Core concepts](#2-core-concepts)
 3. [The `.cogdoc` file format](#3-the-cogdoc-file-format)
 4. [The checkpoint payload](#4-the-checkpoint-payload)
@@ -36,9 +36,7 @@ the v2 checkpoint endpoint and `.cogdoc` flow are landing in stages. See
 
 ---
 
-## 1. Scope and non-goals
-
-### Scope
+## 1. Scope
 
 - Define a portable file format (`.cogdoc`) that holds a piece of writing
   together with a tamper-evident, server-signed history of checkpoints.
@@ -47,22 +45,20 @@ the v2 checkpoint endpoint and `.cogdoc` flow are landing in stages. See
 - Define the minimum security posture for the signing endpoint such that
   trivial abuse (e.g., one-line curl) is blocked without surveilling users
   or interrupting legitimate writing.
-
-### Non-goals
-
 - This protocol does **not** prove human authorship. It certifies the
-  conditions a writer *declared* their composition was made under, plus the
-  integrity of the text and timestamps after declaration.
+  declared conditions of the composition, plus the integrity of the text
+  and timestamps after declaration.
 - This protocol does **not** detect AI-generated content. There is no
   classifier; the protocol does not inspect prose.
-- This protocol does **not** prevent a determined actor from obtaining
-  signed checkpoints through a modified or scripted client at assurance
-  level L1 (see §13 and §14). The signatures themselves are
-  cryptographically unforgeable; what cannot be enforced at L1 is that
-  the declared composition conditions were actually followed.
 - This protocol does **not** require any cross-device synchronization
-  infrastructure on the server side. Portability across devices is achieved
-  through the user moving the `.cogdoc` file (e.g., via iCloud Drive).
+  infrastructure on the server side. Portability across devices is
+  achieved through the user moving the `.cogdoc` file (e.g., via iCloud
+  Drive).
+- This protocol minimizes server-side storage. Writing content is never
+  stored. Checkpoint signing is stateless: the server signs hashes and
+  returns; nothing about the request is persisted. The only data that
+  persists server-side is a small hash-only record behind each v1
+  finalize verify URL.
 
 ## 2. Core concepts
 
