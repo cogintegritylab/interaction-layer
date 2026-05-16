@@ -35,6 +35,18 @@ export default function AboutPage() {
         server.
       </p>
 
+      <p style={paragraphStyle}>
+        For the full technical specification — file format,
+        canonicalization rules, signing endpoint contract, verification
+        algorithm, and the five-level assurance framework — see{" "}
+        <a
+          href="https://github.com/cogintegritylab/interaction-layer/blob/main/SPEC.md"
+          style={linkStyle}
+        >
+          SPEC.md →
+        </a>
+      </p>
+
       <h2 style={h2Style}>The cryptographic principle</h2>
       <p style={paragraphStyle}>
         Earlier cryptographic systems — like the Nazi Enigma — depended on
