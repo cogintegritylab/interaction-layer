@@ -86,6 +86,7 @@ export default function Home() {
   const [saving, setSaving] = useState(false);
   const [loadedDraft, setLoadedDraft] = useState<LoadedDraft | null>(null);
   const [modifiedSinceLoad, setModifiedSinceLoad] = useState(false);
+  const [copied, setCopied] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const internalClipboard = useRef<string>("");
@@ -323,12 +324,31 @@ export default function Home() {
     setError(null);
     setLoadedDraft(null);
     setModifiedSinceLoad(false);
+    setCopied(false);
     internalClipboard.current = "";
     docIdRef.current = null;
     loadedCheckpointsRef.current = [];
     loadedFinalReceiptRef.current = null;
     localStorage.removeItem(DRAFT_KEY);
     setTimeout(() => textareaRef.current?.focus(), 0);
+  };
+
+  const handleCopyOutput = async () => {
+    if (!finalizedResult) return;
+    const output = `${text}\n\nAI-free | ${finalizedResult.verifyUrl}`;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(output);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+        return;
+      }
+    } catch {
+      // Fall through to manual-selection fallback.
+    }
+    setError(
+      "Could not copy automatically. Select the text and signature below by hand and copy them."
+    );
   };
 
   const handleTextChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
@@ -342,10 +362,14 @@ export default function Home() {
     return (
       <main style={pageStyle}>
         <p style={previewNoticeStyle}>
-          Finalized. Select and copy the text and signature line below to
-          paste elsewhere. The recipient can click the verify link to confirm
-          the text and timestamp have not been altered.
+          Finalized. Click the button below to copy the text and signature
+          together (recommended, especially on mobile). The recipient can
+          click the verify link to confirm the text and timestamp have not
+          been altered.
         </p>
+        <button onClick={handleCopyOutput} style={primaryButtonStyle}>
+          {copied ? "✓ Copied" : "Copy text + signature"}
+        </button>
         <div style={finalizedTextStyle}>{text}</div>
         <div style={finalizedTextStyle}>
           AI-free | {finalizedResult.verifyUrl}

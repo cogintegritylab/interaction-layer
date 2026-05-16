@@ -118,14 +118,14 @@ export default function AboutPage() {
       <h2 style={h2Style}>What we cannot prove yet</h2>
       <ul style={listStyle}>
         <li style={liStyle}>
-          <strong>Authorship.</strong> The receipt does not prove who composed
-          the words, only that the text passed through a tool whose paste,
-          copy, and drag protections were in effect. Some input channels —
-          voice dictation, accessibility tools — cannot be distinguished from
-          manual typing. And no tool can determine what the writer was
-          reading, thinking, or referring to as they typed. Stronger
-          enforcement of composition conditions would require a verified
-          client, which is on the protocol roadmap.
+          <strong>Thinking.</strong> The receipt does not prove whose
+          thinking shaped the words — only that the text passed through a
+          tool whose paste, copy, and drag protections were in effect. Some
+          input channels — voice dictation, accessibility tools — cannot be
+          distinguished from manual typing. And no tool can determine what
+          the writer was reading, referring to, or thinking through as they
+          typed. Stronger enforcement of composition conditions would
+          require a verified client, which is on the protocol roadmap.
         </li>
         <li style={liStyle}>
           <strong>That the timestamp is independently anchored.</strong> The
@@ -191,8 +191,17 @@ export default function AboutPage() {
           supplies substantive content.
         </li>
         <li style={liStyle}>
-          <code style={codeStyle}>ai_assisted</code> — composed with declared
-          AI involvement.
+          <code style={codeStyle}>light_editing</code> — composed by the
+          writer; AI&rsquo;s role is constrained to grammar, spelling, and
+          basic style, without contributing substantive content.
+        </li>
+        <li style={liStyle}>
+          <code style={codeStyle}>ai_assisted</code> — composed under
+          circumscribed AI involvement (e.g., suggestion-only,
+          paraphrasing, structural feedback). The mode constrains{" "}
+          <em>how</em> AI may enter the composition, rather than just
+          disclosing that it did. The protocol&rsquo;s role is to set terms
+          on AI participation, preserving human judgment within those terms.
         </li>
         <li style={liStyle}>
           <code style={codeStyle}>translation_active</code> — passed through
