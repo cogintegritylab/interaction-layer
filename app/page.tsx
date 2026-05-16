@@ -30,6 +30,31 @@ function readCsrfTokenFromCookie(): string | null {
   return match ? match.split("=")[1] : null;
 }
 
+// Build a human-scannable filename: 2026-05-15-first-few-words.cogdoc.
+// Strips punctuation/symbols, keeps letters and digits (including non-ASCII
+// scripts), keeps the first six words, falls back to a date-only filename
+// if no usable slug can be made.
+function generateFilename(text: string): string {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  const datePrefix = `${yyyy}-${mm}-${dd}`;
+
+  const slug = text
+    .slice(0, 80)
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s-]/gu, "")
+    .trim()
+    .split(/\s+/)
+    .slice(0, 6)
+    .join("-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return slug ? `${datePrefix}-${slug}.cogdoc` : `${datePrefix}.cogdoc`;
+}
+
 export default function Home() {
   const [text, setText] = useState("");
   const [finalizedResult, setFinalizedResult] =
@@ -138,7 +163,7 @@ export default function Home() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${docId}.cogdoc`;
+      a.download = generateFilename(text);
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
