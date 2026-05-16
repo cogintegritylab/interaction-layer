@@ -3,10 +3,32 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { ClipboardEvent, DragEvent } from "react";
+import { hashText } from "@/lib/hash";
 
 const DRAFT_KEY = "aife_draft_v1";
 
 type FinalizedResult = { id: string; verifyUrl: string };
+
+type SignedCheckpoint = {
+  payload: Record<string, string | number>;
+  signature: string;
+  kid: string;
+};
+
+function generateDocId(): string {
+  const bytes = new Uint8Array(12);
+  crypto.getRandomValues(bytes);
+  let bin = "";
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function readCsrfTokenFromCookie(): string | null {
+  const match = document.cookie
+    .split("; ")
+    .find((c) => c.startsWith("aife_csrf="));
+  return match ? match.split("=")[1] : null;
+}
 
 export default function Home() {
   const [text, setText] = useState("");
@@ -15,8 +37,10 @@ export default function Home() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [saving, setSaving] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const internalClipboard = useRef<string>("");
+  const docIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem(DRAFT_KEY);
@@ -62,6 +86,71 @@ export default function Home() {
     e.preventDefault();
   };
 
+  const handleSaveToDevice = async () => {
+    if (text.trim().length === 0 || saving || submitting) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const csrf = readCsrfTokenFromCookie();
+      if (!csrf) {
+        throw new Error(
+          "Session not initialized. Reload the page and try again."
+        );
+      }
+      if (!docIdRef.current) {
+        docIdRef.current = generateDocId();
+      }
+      const docId = docIdRef.current;
+      const textHashHex = await hashText(text);
+
+      const response = await fetch("/api/checkpoint", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-Token": csrf,
+        },
+        body: JSON.stringify({
+          doc_id: docId,
+          mode: "ai_free",
+          text_hash: textHashHex,
+          prev_checkpoint_hash: "genesis",
+        }),
+      });
+
+      if (!response.ok) {
+        const data: { error?: string } = await response.json().catch(() => ({}));
+        throw new Error(data.error || `Server returned ${response.status}`);
+      }
+      const signed: SignedCheckpoint = await response.json();
+
+      const cogdoc = {
+        format_version: 2,
+        doc_id: docId,
+        mode: "ai_free",
+        content: text,
+        checkpoints: [signed],
+        final_receipt: null,
+      };
+
+      const blob = new Blob([JSON.stringify(cogdoc, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${docId}.cogdoc`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Save failed";
+      setError(message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleFinalize = async () => {
     if (text.trim().length === 0 || submitting) return;
     setSubmitting(true);
@@ -94,6 +183,7 @@ export default function Home() {
     setFinalizedResult(null);
     setError(null);
     internalClipboard.current = "";
+    docIdRef.current = null;
     localStorage.removeItem(DRAFT_KEY);
     setTimeout(() => textareaRef.current?.focus(), 0);
   };
@@ -154,17 +244,31 @@ export default function Home() {
       {error && <p style={errorStyle}>Error: {error}</p>}
       <div style={toolbarStyle}>
         <span style={mutedStyle}>{text.length} characters</span>
-        <button
-          onClick={handleFinalize}
-          disabled={text.trim().length === 0 || submitting}
-          style={
-            text.trim().length === 0 || submitting
-              ? { ...primaryButtonStyle, ...disabledButtonStyle }
-              : primaryButtonStyle
-          }
-        >
-          {submitting ? "Signing…" : "Finalize"}
-        </button>
+        <div style={buttonGroupStyle}>
+          <button
+            onClick={handleSaveToDevice}
+            disabled={text.trim().length === 0 || saving || submitting}
+            style={
+              text.trim().length === 0 || saving || submitting
+                ? { ...saveButtonStyle, ...disabledButtonStyle }
+                : saveButtonStyle
+            }
+            title="Save a portable .cogdoc file to your device"
+          >
+            {saving ? "Saving…" : "Save to Device"}
+          </button>
+          <button
+            onClick={handleFinalize}
+            disabled={text.trim().length === 0 || submitting || saving}
+            style={
+              text.trim().length === 0 || submitting || saving
+                ? { ...primaryButtonStyle, ...disabledButtonStyle }
+                : primaryButtonStyle
+            }
+          >
+            {submitting ? "Signing…" : "Finalize"}
+          </button>
+        </div>
       </div>
       <p style={aboutLinkStyle}>
         <Link href="/about" style={aboutLinkAnchorStyle}>
@@ -255,6 +359,23 @@ const toolbarStyle: React.CSSProperties = {
   alignItems: "center",
   justifyContent: "space-between",
   gap: "1rem",
+};
+
+const buttonGroupStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "0.5rem",
+};
+
+const saveButtonStyle: React.CSSProperties = {
+  padding: "0.6rem 1rem",
+  fontSize: "0.95rem",
+  fontFamily: "inherit",
+  color: "#1a1a1a",
+  background: "transparent",
+  border: "1px solid #c4c4c4",
+  borderRadius: 6,
+  cursor: "pointer",
 };
 
 const primaryButtonStyle: React.CSSProperties = {
